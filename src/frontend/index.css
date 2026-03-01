@@ -1,0 +1,293 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================
+   VED JEWELLERS - Luxury Design System
+   OKLCH color tokens + custom fonts
+   ========================================== */
+
+/* 
+  Luxury Typography
+  Using pre-bundled fonts if available, with graceful fallbacks
+  Playfair Display - Luxury serif for headings
+  Instrument Serif - Elegant italic serif 
+  Figtree - Clean body sans-serif
+*/
+
+@layer base {
+  :root {
+    --radius: 0.25rem;
+
+    /* === CORE PALETTE ===
+       Matte Gold:    #C8A951  → oklch(0.73 0.10 78)
+       Deep Burgundy: #4A0F1E  → oklch(0.22 0.085 10)
+       Ivory White:   #FAF7F2  → oklch(0.98 0.008 80)
+       Champagne:     #E8D5A0  → oklch(0.87 0.07 80)
+       Dark Ink:      #1A1008  → oklch(0.13 0.02 60)
+    */
+
+    /* Semantic tokens */
+    --background: 0.98 0.008 80;           /* Ivory White */
+    --foreground: 0.13 0.02 60;            /* Dark Ink */
+    --card: 1 0 0;                         /* Pure white for cards */
+    --card-foreground: 0.13 0.02 60;
+    --popover: 1 0 0;
+    --popover-foreground: 0.13 0.02 60;
+
+    /* Primary = Matte Gold */
+    --primary: 0.73 0.10 78;
+    --primary-foreground: 0.13 0.02 60;
+
+    /* Secondary = Deep Burgundy */
+    --secondary: 0.22 0.085 10;
+    --secondary-foreground: 0.98 0.008 80;
+
+    /* Muted = warm gray */
+    --muted: 0.94 0.012 80;
+    --muted-foreground: 0.50 0.025 60;
+
+    /* Accent = Champagne */
+    --accent: 0.87 0.07 80;
+    --accent-foreground: 0.22 0.085 10;
+
+    --destructive: 0.577 0.245 27.325;
+    --destructive-foreground: 0.985 0 0;
+
+    --border: 0.88 0.03 80;
+    --input: 0.90 0.025 80;
+    --ring: 0.73 0.10 78;
+
+    /* Chart colors */
+    --chart-1: 0.73 0.10 78;
+    --chart-2: 0.22 0.085 10;
+    --chart-3: 0.87 0.07 80;
+    --chart-4: 0.60 0.08 78;
+    --chart-5: 0.40 0.06 10;
+
+    /* Sidebar */
+    --sidebar: 0.22 0.085 10;
+    --sidebar-foreground: 0.98 0.008 80;
+    --sidebar-primary: 0.73 0.10 78;
+    --sidebar-primary-foreground: 0.13 0.02 60;
+    --sidebar-accent: 0.30 0.085 10;
+    --sidebar-accent-foreground: 0.98 0.008 80;
+    --sidebar-border: 0.35 0.07 10;
+    --sidebar-ring: 0.73 0.10 78;
+
+    /* Brand-specific tokens */
+    --gold: 0.73 0.10 78;
+    --gold-light: 0.87 0.07 80;
+    --gold-dark: 0.55 0.085 78;
+    --burgundy: 0.22 0.085 10;
+    --burgundy-light: 0.32 0.085 10;
+    --ivory: 0.98 0.008 80;
+    --ink: 0.13 0.02 60;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Figtree", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Playfair Display", Georgia, serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* ==========================================
+   LUXURY COMPONENT STYLES
+   ========================================== */
+
+@layer components {
+  /* Gold shimmer button effect */
+  .btn-gold {
+    position: relative;
+    overflow: hidden;
+    background: oklch(var(--gold));
+    color: oklch(var(--ink));
+    font-family: "Figtree", sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    padding: 0.875rem 2.5rem;
+    transition: all 0.3s ease;
+  }
+
+  .btn-gold::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      oklch(1 0 0 / 35%),
+      transparent
+    );
+    transition: left 0.5s ease;
+  }
+
+  .btn-gold:hover::before {
+    left: 100%;
+  }
+
+  .btn-gold:hover {
+    background: oklch(var(--gold-light));
+    box-shadow: 0 8px 32px oklch(var(--gold) / 40%);
+    transform: translateY(-1px);
+  }
+
+  /* Gold outline button */
+  .btn-gold-outline {
+    position: relative;
+    overflow: hidden;
+    background: transparent;
+    border: 1.5px solid oklch(var(--gold));
+    color: oklch(var(--gold));
+    font-family: "Figtree", sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    padding: 0.875rem 2.5rem;
+    transition: all 0.3s ease;
+  }
+
+  .btn-gold-outline:hover {
+    background: oklch(var(--gold));
+    color: oklch(var(--ink));
+    box-shadow: 0 8px 32px oklch(var(--gold) / 30%);
+  }
+
+  /* Luxury section heading */
+  .luxury-heading {
+    font-family: "Playfair Display", Georgia, serif;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    color: oklch(var(--ink));
+  }
+
+  /* Gold divider line */
+  .gold-divider {
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      oklch(var(--gold)),
+      transparent
+    );
+    margin: 0 auto;
+  }
+
+  /* Product card hover */
+  .product-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 60px oklch(var(--ink) / 12%);
+  }
+
+  /* Whisper text - decorative subtitle */
+  .whisper-text {
+    font-family: "Instrument Serif", Georgia, serif;
+    font-style: italic;
+    color: oklch(var(--gold));
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+  }
+
+  /* Mega menu fade */
+  .mega-menu {
+    animation: menuFadeIn 0.2s ease;
+  }
+
+  @keyframes menuFadeIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Gold shimmer animation */
+  @keyframes goldShimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+
+  .shimmer-text {
+    background: linear-gradient(
+      90deg,
+      oklch(var(--gold-dark)),
+      oklch(var(--gold-light)),
+      oklch(var(--gold-dark))
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: goldShimmer 3s linear infinite;
+  }
+
+  /* Section reveal animation */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Luxury card */
+  .luxury-card {
+    background: oklch(var(--card));
+    border: 1px solid oklch(var(--gold) / 15%);
+    box-shadow: 0 4px 24px oklch(var(--ink) / 6%);
+  }
+
+  /* Scroll hide */
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Admin form inputs */
+  .admin-label {
+    display: block;
+    font-family: "Figtree", sans-serif;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: oklch(var(--muted-foreground));
+    margin-bottom: 0.375rem;
+  }
+
+  .admin-input {
+    border: 1px solid oklch(var(--border));
+    background: oklch(var(--background));
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    font-family: "Figtree", sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .admin-input:focus {
+    border-color: oklch(var(--gold));
+  }
+}
