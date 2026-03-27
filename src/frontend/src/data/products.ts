@@ -1,6 +1,25 @@
 // Frontend-only product data for display purposes
 // Do NOT store these in backend
 
+const BASE = "/assets/generated";
+
+const heroBannerImg = `${BASE}/hero-banner.dim_1600x700.jpg`;
+const vedLogoImg = `${BASE}/ved-logo-transparent.dim_300x80.png`;
+const weddingCollectionImg = `${BASE}/wedding-collection.dim_800x600.jpg`;
+const giftingCollectionImg = `${BASE}/gifting-collection.dim_800x600.jpg`;
+const productRingImg = `${BASE}/product-ring.dim_600x600.jpg`;
+const productEarringsImg = `${BASE}/product-earrings.dim_600x600.jpg`;
+const productNecklaceImg = `${BASE}/product-necklace.dim_600x600.jpg`;
+const productBraceletImg = `${BASE}/product-bracelet.dim_600x600.jpg`;
+const productMangalsutraImg = `${BASE}/product-mangalsutra.dim_600x600.jpg`;
+
+export {
+  heroBannerImg,
+  vedLogoImg,
+  weddingCollectionImg,
+  giftingCollectionImg,
+};
+
 export interface MockProduct {
   id: number;
   name: string;
@@ -19,13 +38,13 @@ export interface MockProduct {
 }
 
 const CATEGORY_IMAGES: Record<string, string> = {
-  rings: "/assets/generated/product-ring.dim_600x600.jpg",
-  earrings: "/assets/generated/product-earrings.dim_600x600.jpg",
-  necklaces: "/assets/generated/product-necklace.dim_600x600.jpg",
-  bracelets: "/assets/generated/product-bracelet.dim_600x600.jpg",
-  mangalsutra: "/assets/generated/product-mangalsutra.dim_600x600.jpg",
-  wedding: "/assets/generated/wedding-collection.dim_800x600.jpg",
-  gifting: "/assets/generated/gifting-collection.dim_800x600.jpg",
+  rings: productRingImg,
+  earrings: productEarringsImg,
+  necklaces: productNecklaceImg,
+  bracelets: productBraceletImg,
+  mangalsutra: productMangalsutraImg,
+  wedding: weddingCollectionImg,
+  gifting: giftingCollectionImg,
 };
 
 export function getCategoryImage(category: string): string {
@@ -40,7 +59,7 @@ export const MOCK_PRODUCTS: MockProduct[] = [
     price: 8999900,
     originalPrice: 10999900,
     category: "rings",
-    imageUrl: "/assets/generated/product-ring.dim_600x600.jpg",
+    imageUrl: productRingImg,
     isBestSeller: true,
     isNewArrival: false,
     isFeatured: true,
@@ -57,7 +76,7 @@ export const MOCK_PRODUCTS: MockProduct[] = [
     price: 4599900,
     originalPrice: 5499900,
     category: "rings",
-    imageUrl: "/assets/generated/product-ring.dim_600x600.jpg",
+    imageUrl: productRingImg,
     isBestSeller: false,
     isNewArrival: true,
     isFeatured: true,
@@ -74,7 +93,7 @@ export const MOCK_PRODUCTS: MockProduct[] = [
     price: 3299900,
     originalPrice: undefined,
     category: "rings",
-    imageUrl: "/assets/generated/product-ring.dim_600x600.jpg",
+    imageUrl: productRingImg,
     isBestSeller: false,
     isNewArrival: true,
     isFeatured: false,
@@ -92,7 +111,7 @@ export const MOCK_PRODUCTS: MockProduct[] = [
     price: 6799900,
     originalPrice: 7999900,
     category: "earrings",
-    imageUrl: "/assets/generated/product-earrings.dim_600x600.jpg",
+    imageUrl: productEarringsImg,
     isBestSeller: true,
     isNewArrival: false,
     isFeatured: true,
@@ -109,7 +128,7 @@ export const MOCK_PRODUCTS: MockProduct[] = [
     price: 2499900,
     originalPrice: undefined,
     category: "earrings",
-    imageUrl: "/assets/generated/product-earrings.dim_600x600.jpg",
+    imageUrl: productEarringsImg,
     isBestSeller: false,
     isNewArrival: true,
     isFeatured: false,
@@ -126,7 +145,7 @@ export const MOCK_PRODUCTS: MockProduct[] = [
     price: 1899900,
     originalPrice: 2199900,
     category: "earrings",
-    imageUrl: "/assets/generated/product-earrings.dim_600x600.jpg",
+    imageUrl: productEarringsImg,
     isBestSeller: true,
     isNewArrival: false,
     isFeatured: false,
@@ -144,7 +163,7 @@ export const MOCK_PRODUCTS: MockProduct[] = [
     price: 24999900,
     originalPrice: 28999900,
     category: "necklaces",
-    imageUrl: "/assets/generated/product-necklace.dim_600x600.jpg",
+    imageUrl: productNecklaceImg,
     isBestSeller: true,
     isNewArrival: false,
     isFeatured: true,
@@ -161,7 +180,7 @@ export const MOCK_PRODUCTS: MockProduct[] = [
     price: 12999900,
     originalPrice: undefined,
     category: "necklaces",
-    imageUrl: "/assets/generated/product-necklace.dim_600x600.jpg",
+    imageUrl: productNecklaceImg,
     isBestSeller: false,
     isNewArrival: true,
     isFeatured: true,
@@ -178,7 +197,7 @@ export const MOCK_PRODUCTS: MockProduct[] = [
     price: 3499900,
     originalPrice: 3999900,
     category: "necklaces",
-    imageUrl: "/assets/generated/product-necklace.dim_600x600.jpg",
+    imageUrl: productNecklaceImg,
     isBestSeller: false,
     isNewArrival: false,
     isFeatured: false,
@@ -196,7 +215,7 @@ export const MOCK_PRODUCTS: MockProduct[] = [
     price: 9499900,
     originalPrice: 10999900,
     category: "bracelets",
-    imageUrl: "/assets/generated/product-bracelet.dim_600x600.jpg",
+    imageUrl: productBraceletImg,
     isBestSeller: true,
     isNewArrival: false,
     isFeatured: true,
@@ -213,7 +232,7 @@ export const MOCK_PRODUCTS: MockProduct[] = [
     price: 6299900,
     originalPrice: undefined,
     category: "bracelets",
-    imageUrl: "/assets/generated/product-bracelet.dim_600x600.jpg",
+    imageUrl: productBraceletImg,
     isBestSeller: false,
     isNewArrival: true,
     isFeatured: false,
@@ -231,7 +250,7 @@ export const MOCK_PRODUCTS: MockProduct[] = [
     price: 5499900,
     originalPrice: 6299900,
     category: "mangalsutra",
-    imageUrl: "/assets/generated/product-mangalsutra.dim_600x600.jpg",
+    imageUrl: productMangalsutraImg,
     isBestSeller: true,
     isNewArrival: false,
     isFeatured: true,
@@ -248,7 +267,7 @@ export const MOCK_PRODUCTS: MockProduct[] = [
     price: 3999900,
     originalPrice: undefined,
     category: "mangalsutra",
-    imageUrl: "/assets/generated/product-mangalsutra.dim_600x600.jpg",
+    imageUrl: productMangalsutraImg,
     isBestSeller: false,
     isNewArrival: true,
     isFeatured: false,
@@ -262,36 +281,12 @@ export const MOCK_PRODUCTS: MockProduct[] = [
 ];
 
 export const CATEGORIES = [
-  {
-    id: "rings",
-    name: "Rings",
-    image: "/assets/generated/product-ring.dim_600x600.jpg",
-  },
-  {
-    id: "earrings",
-    name: "Earrings",
-    image: "/assets/generated/product-earrings.dim_600x600.jpg",
-  },
-  {
-    id: "necklaces",
-    name: "Necklaces",
-    image: "/assets/generated/product-necklace.dim_600x600.jpg",
-  },
-  {
-    id: "bracelets",
-    name: "Bracelets",
-    image: "/assets/generated/product-bracelet.dim_600x600.jpg",
-  },
-  {
-    id: "mangalsutra",
-    name: "Mangalsutra",
-    image: "/assets/generated/product-mangalsutra.dim_600x600.jpg",
-  },
-  {
-    id: "wedding",
-    name: "Wedding",
-    image: "/assets/generated/wedding-collection.dim_800x600.jpg",
-  },
+  { id: "rings", name: "Rings", image: productRingImg },
+  { id: "earrings", name: "Earrings", image: productEarringsImg },
+  { id: "necklaces", name: "Necklaces", image: productNecklaceImg },
+  { id: "bracelets", name: "Bracelets", image: productBraceletImg },
+  { id: "mangalsutra", name: "Mangalsutra", image: productMangalsutraImg },
+  { id: "wedding", name: "Wedding", image: weddingCollectionImg },
 ];
 
 export const NAV_CATEGORIES = [

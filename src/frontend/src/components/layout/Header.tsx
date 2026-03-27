@@ -10,7 +10,7 @@ import {
 import { useEffect, useState } from "react";
 import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
-import { NAV_CATEGORIES } from "../../data/products";
+import { NAV_CATEGORIES, vedLogoImg } from "../../data/products";
 import { useInternetIdentity } from "../../hooks/useInternetIdentity";
 
 const CATEGORY_LINKS = NAV_CATEGORIES.map((cat) => ({
@@ -125,7 +125,7 @@ export function Header() {
             {/* Logo */}
             <a href="#/" className="flex-shrink-0">
               <img
-                src="/assets/generated/ved-logo-transparent.dim_300x80.png"
+                src={vedLogoImg}
                 alt="Ved Jewellers"
                 className="h-10 lg:h-12 w-auto"
               />
@@ -301,7 +301,7 @@ export function Header() {
           <div className="absolute top-0 left-0 h-full w-72 bg-ivory flex flex-col">
             <div className="h-16 border-b border-gold/20 flex items-center px-4">
               <img
-                src="/assets/generated/ved-logo-transparent.dim_300x80.png"
+                src={vedLogoImg}
                 alt="Ved Jewellers"
                 className="h-9 w-auto"
               />

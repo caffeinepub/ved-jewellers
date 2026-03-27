@@ -8,7 +8,14 @@ import {
 } from "lucide-react";
 import { useRef } from "react";
 import { ProductCard } from "../components/shared/ProductCard";
-import { CATEGORIES, MOCK_PRODUCTS, formatPrice } from "../data/products";
+import {
+  CATEGORIES,
+  MOCK_PRODUCTS,
+  formatPrice,
+  giftingCollectionImg,
+  heroBannerImg,
+  weddingCollectionImg,
+} from "../data/products";
 import { useReveal } from "../hooks/useReveal";
 
 // ─── Hero ──────────────────────────────────────────────────────────────────
@@ -18,7 +25,7 @@ function HeroSection() {
       {/* Background image */}
       <div className="absolute inset-0">
         <img
-          src="/assets/generated/hero-banner.dim_1600x700.jpg"
+          src={heroBannerImg}
           alt="Luxury jewellery"
           className="w-full h-full object-cover"
         />
@@ -252,7 +259,7 @@ function CollectionBanners() {
             className="group relative overflow-hidden aspect-[4/3] block luxury-card"
           >
             <img
-              src="/assets/generated/wedding-collection.dim_800x600.jpg"
+              src={weddingCollectionImg}
               alt="Wedding Collection"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               loading="lazy"
@@ -275,7 +282,7 @@ function CollectionBanners() {
             className="group relative overflow-hidden aspect-[4/3] block luxury-card"
           >
             <img
-              src="/assets/generated/gifting-collection.dim_800x600.jpg"
+              src={giftingCollectionImg}
               alt="Gifting Collection"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               loading="lazy"

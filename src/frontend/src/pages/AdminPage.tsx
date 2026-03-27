@@ -1,52 +1,242 @@
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  CheckCircle,
+  AlertTriangle,
+  BarChart3,
   ChevronDown,
+  Crown,
+  Edit2,
   Loader2,
   Package,
-  Pencil,
+  PackagePlus,
   Plus,
-  ShoppingCart,
+  ShoppingBag,
   Tag,
   Trash2,
-  XCircle,
+  TrendingUp,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { motion } from "motion/react";
+import { useState } from "react";
 import { toast } from "sonner";
 import type { Coupon, Order, Product } from "../backend";
-import { DiscountType, OrderStatus, PaymentStatus } from "../backend";
-import { formatBigIntPrice } from "../data/products";
+import { DiscountType, OrderStatus } from "../backend";
+import { MOCK_PRODUCTS, formatBigIntPrice } from "../data/products";
 import { useActor } from "../hooks/useActor";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 
-type AdminTab = "products" | "orders" | "coupons";
+// ─── Types ────────────────────────────────────────────────────────────────────
+type AdminTab = "dashboard" | "products" | "orders" | "coupons";
 
-// ─── Product Form ────────────────────────────────────────────────────────────
-const EMPTY_PRODUCT: Omit<Product, "id" | "createdAt"> = {
+const EMPTY_PRODUCT = {
   name: "",
   description: "",
-  price: BigInt(0),
+  price: "",
+  stock: "",
   imageUrl: "",
-  stock: BigInt(0),
   isFeatured: false,
   isNewArrival: false,
   isBestSeller: false,
 };
 
+const EMPTY_COUPON = {
+  code: "",
+  discountType: DiscountType.percentage,
+  discountValue: "",
+  minOrderValue: "",
+  isActive: true,
+};
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function orderStatusColor(status: OrderStatus) {
+  switch (status) {
+    case OrderStatus.delivered:
+      return "bg-emerald-900/40 text-emerald-300 border-emerald-700";
+    case OrderStatus.shipped:
+      return "bg-blue-900/40 text-blue-300 border-blue-700";
+    case OrderStatus.processing:
+      return "bg-amber-900/40 text-amber-300 border-amber-700";
+    case OrderStatus.cancelled:
+      return "bg-red-900/40 text-red-300 border-red-700";
+    default:
+      return "bg-zinc-800 text-zinc-400 border-zinc-600";
+  }
+}
+
+// ─── Dashboard ───────────────────────────────────────────────────────────────
+function DashboardTab() {
+  const { actor, isFetching } = useActor();
+
+  const { data: products = [] } = useQuery<Product[]>({
+    queryKey: ["admin-products"],
+    queryFn: async () => (actor ? actor.getAllProducts() : []),
+    enabled: !!actor && !isFetching,
+  });
+
+  const { data: orders = [] } = useQuery<Order[]>({
+    queryKey: ["admin-orders"],
+    queryFn: async () => (actor ? actor.getUserOrders() : []),
+    enabled: !!actor && !isFetching,
+  });
+
+  const { data: coupons = [] } = useQuery<Coupon[]>({
+    queryKey: ["admin-coupons"],
+    queryFn: async () => (actor ? actor.getAllCoupons() : []),
+    enabled: !!actor && !isFetching,
+  });
+
+  const totalRevenue = orders
+    .filter((o) => o.status === OrderStatus.delivered)
+    .reduce((acc, o) => acc + Number(o.totalAmount), 0);
+
+  const activeCoupons = coupons.filter((c) => c.isActive).length;
+
+  const stats = [
+    {
+      label: "Total Products",
+      value: products.length,
+      icon: Package,
+      sub: "In catalogue",
+    },
+    {
+      label: "Total Orders",
+      value: orders.length,
+      icon: ShoppingBag,
+      sub: "All time",
+    },
+    {
+      label: "Total Revenue",
+      value: formatBigIntPrice(BigInt(Math.round(totalRevenue))),
+      icon: TrendingUp,
+      sub: "From delivered orders",
+    },
+    {
+      label: "Active Coupons",
+      value: activeCoupons,
+      icon: Tag,
+      sub: "Currently active",
+    },
+  ];
+
+  return (
+    <div data-ocid="dashboard.section">
+      <h2 className="text-2xl font-serif text-foreground mb-6">Overview</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {stats.map((s, i) => (
+          <motion.div
+            key={s.label}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.08 }}
+          >
+            <Card className="bg-card border-border hover:border-primary/50 transition-colors">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {s.label}
+                </CardTitle>
+                <s.icon className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-foreground">
+                  {s.value}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">{s.sub}</p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Recent orders */}
+      <div className="mt-10">
+        <h3 className="text-lg font-serif text-foreground mb-4">
+          Recent Orders
+        </h3>
+        {orders.length === 0 ? (
+          <div
+            data-ocid="dashboard.empty_state"
+            className="text-muted-foreground text-sm py-8 text-center border border-dashed border-border rounded-lg"
+          >
+            No orders yet.
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow className="border-border">
+                <TableHead>Order ID</TableHead>
+                <TableHead>Items</TableHead>
+                <TableHead>Total</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {orders.slice(0, 5).map((order) => (
+                <TableRow key={order.id.toString()} className="border-border">
+                  <TableCell className="font-mono text-xs text-muted-foreground">
+                    #{order.id.toString()}
+                  </TableCell>
+                  <TableCell>{order.items.length} item(s)</TableCell>
+                  <TableCell>{formatBigIntPrice(order.totalAmount)}</TableCell>
+                  <TableCell>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-xs border ${orderStatusColor(
+                        order.status,
+                      )}`}
+                    >
+                      {order.status}
+                    </span>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Products ────────────────────────────────────────────────────────────────
 function ProductsTab() {
-  const { actor } = useActor();
+  const { actor, isFetching } = useActor();
   const qc = useQueryClient();
-  const [showForm, setShowForm] = useState(false);
-  const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<Product | null>(null);
   const [form, setForm] = useState(EMPTY_PRODUCT);
+  const [deleteConfirm, setDeleteConfirm] = useState<bigint | null>(null);
 
   const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ["admin-products"],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllProducts();
-    },
-    enabled: !!actor,
+    queryFn: async () => (actor ? actor.getAllProducts() : []),
+    enabled: !!actor && !isFetching,
   });
 
   const upsertMutation = useMutation({
@@ -56,10 +246,10 @@ function ProductsTab() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-products"] });
-      setShowForm(false);
-      setEditProduct(null);
+      setDialogOpen(false);
+      setEditTarget(null);
       setForm(EMPTY_PRODUCT);
-      toast.success("Product saved");
+      toast.success("Product saved successfully");
     },
     onError: () => toast.error("Failed to save product"),
   });
@@ -71,310 +261,436 @@ function ProductsTab() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-products"] });
+      setDeleteConfirm(null);
       toast.success("Product deleted");
     },
-    onError: () => toast.error("Failed to delete"),
+    onError: () => toast.error("Failed to delete product"),
   });
 
+  const seedMutation = useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error("Not authenticated");
+      const seedProducts: Product[] = MOCK_PRODUCTS.map((mp) => ({
+        id: BigInt(0),
+        createdAt: BigInt(Date.now() * 1_000_000),
+        name: mp.name,
+        description: mp.description,
+        price: BigInt(mp.price),
+        stock: BigInt(mp.stock),
+        imageUrl: mp.imageUrl,
+        isFeatured: mp.isFeatured,
+        isNewArrival: mp.isNewArrival,
+        isBestSeller: mp.isBestSeller,
+      }));
+      for (const p of seedProducts) {
+        await actor.upsertProduct(p);
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-products"] });
+      toast.success("13 products seeded successfully!");
+    },
+    onError: () => toast.error("Seed failed"),
+  });
+
+  const openAdd = () => {
+    setEditTarget(null);
+    setForm(EMPTY_PRODUCT);
+    setDialogOpen(true);
+  };
+
   const openEdit = (p: Product) => {
-    setEditProduct(p);
+    setEditTarget(p);
     setForm({
       name: p.name,
       description: p.description,
-      price: p.price,
+      price: (Number(p.price) / 100).toString(),
+      stock: p.stock.toString(),
       imageUrl: p.imageUrl,
-      stock: p.stock,
       isFeatured: p.isFeatured,
       isNewArrival: p.isNewArrival,
       isBestSeller: p.isBestSeller,
     });
-    setShowForm(true);
+    setDialogOpen(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const priceRupees = Number.parseFloat(form.price) || 0;
     const product: Product = {
-      id: editProduct?.id ?? BigInt(0),
-      createdAt: editProduct?.createdAt ?? BigInt(Date.now() * 1_000_000),
-      ...form,
+      id: editTarget?.id ?? BigInt(0),
+      createdAt: editTarget?.createdAt ?? BigInt(Date.now() * 1_000_000),
+      name: form.name,
+      description: form.description,
+      price: BigInt(Math.round(priceRupees * 100)),
+      stock: BigInt(Number.parseInt(form.stock) || 0),
+      imageUrl: form.imageUrl,
+      isFeatured: form.isFeatured,
+      isNewArrival: form.isNewArrival,
+      isBestSeller: form.isBestSeller,
     };
     upsertMutation.mutate(product);
   };
 
   return (
-    <div>
+    <div data-ocid="products.section">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="font-serif text-xl">Products</h2>
-        <button
-          type="button"
-          onClick={() => {
-            setEditProduct(null);
-            setForm(EMPTY_PRODUCT);
-            setShowForm(true);
-          }}
-          className="btn-gold flex items-center gap-2"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Add Product
-        </button>
+        <h2 className="text-2xl font-serif text-foreground">Products</h2>
+        <div className="flex gap-2">
+          {products.length === 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => seedMutation.mutate()}
+              disabled={seedMutation.isPending}
+              data-ocid="products.secondary_button"
+            >
+              {seedMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <PackagePlus className="h-4 w-4 mr-2" />
+              )}
+              Seed 13 Products
+            </Button>
+          )}
+          <Button
+            onClick={openAdd}
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+            data-ocid="products.open_modal_button"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Product
+          </Button>
+        </div>
       </div>
 
-      {/* Form */}
-      {showForm && (
-        <div className="luxury-card p-6 mb-6">
-          <h3 className="font-serif text-lg mb-4">
-            {editProduct ? "Edit Product" : "Add New Product"}
-          </h3>
-          <form
-            onSubmit={handleSubmit}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-          >
-            <div className="sm:col-span-2">
-              <label htmlFor="prod-name" className="admin-label">
-                Name \*
-              </label>
-              <input
-                required
-                id="prod-name"
+      {isLoading ? (
+        <div data-ocid="products.loading_state" className="space-y-3">
+          {["a", "b", "c", "d"].map((k) => (
+            <Skeleton key={k} className="h-14 w-full" />
+          ))}
+        </div>
+      ) : products.length === 0 ? (
+        <div
+          data-ocid="products.empty_state"
+          className="text-center py-16 border border-dashed border-border rounded-lg"
+        >
+          <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground mb-4">
+            No products yet. Add your first product or seed the sample
+            catalogue.
+          </p>
+        </div>
+      ) : (
+        <div className="rounded-lg border border-border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-border bg-muted/30">
+                <TableHead className="w-16">Image</TableHead>
+                <TableHead>Product Name</TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead>Stock</TableHead>
+                <TableHead>Tags</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {products.map((p, idx) => (
+                <TableRow
+                  key={p.id.toString()}
+                  data-ocid={`products.item.${idx + 1}`}
+                  className="border-border hover:bg-muted/20 transition-colors"
+                >
+                  <TableCell>
+                    <div className="w-10 h-10 rounded overflow-hidden bg-muted">
+                      {p.imageUrl ? (
+                        <img
+                          src={p.imageUrl}
+                          alt={p.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Package className="w-5 h-5 m-2.5 text-muted-foreground" />
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="font-medium text-foreground">
+                    {p.name}
+                  </TableCell>
+                  <TableCell className="text-primary font-semibold">
+                    {formatBigIntPrice(p.price)}
+                  </TableCell>
+                  <TableCell>
+                    <span
+                      className={`text-sm font-medium ${
+                        Number(p.stock) === 0
+                          ? "text-destructive"
+                          : Number(p.stock) < 5
+                            ? "text-amber-400"
+                            : "text-muted-foreground"
+                      }`}
+                    >
+                      {p.stock.toString()}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {p.isFeatured && (
+                        <Badge className="bg-primary/20 text-primary border-primary/40 text-xs">
+                          Featured
+                        </Badge>
+                      )}
+                      {p.isNewArrival && (
+                        <Badge className="bg-emerald-900/40 text-emerald-300 border-emerald-700 text-xs">
+                          New
+                        </Badge>
+                      )}
+                      {p.isBestSeller && (
+                        <Badge className="bg-amber-900/40 text-amber-300 border-amber-700 text-xs">
+                          Best Seller
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => openEdit(p)}
+                        data-ocid={`products.edit_button.${idx + 1}`}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => setDeleteConfirm(p.id)}
+                        data-ocid={`products.delete_button.${idx + 1}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      {/* Add / Edit Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent
+          className="max-w-lg bg-card border-border max-h-[90vh] overflow-y-auto"
+          data-ocid="products.dialog"
+        >
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl">
+              {editTarget ? "Edit Product" : "Add New Product"}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+            <div className="space-y-1">
+              <Label htmlFor="pname">Product Name</Label>
+              <Input
+                id="pname"
                 value={form.name}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, name: e.target.value }))
                 }
-                className="admin-input w-full"
-                placeholder="Solitaire Diamond Ring"
+                placeholder="e.g. Solitaire Diamond Ring"
+                required
+                data-ocid="products.input"
               />
             </div>
-            <div className="sm:col-span-2">
-              <label htmlFor="prod-desc" className="admin-label">
-                Description \*
-              </label>
-              <textarea
-                required
-                id="prod-desc"
+            <div className="space-y-1">
+              <Label htmlFor="pdesc">Description</Label>
+              <Textarea
+                id="pdesc"
                 value={form.description}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, description: e.target.value }))
                 }
+                placeholder="Describe the jewellery piece..."
                 rows={3}
-                className="admin-input w-full resize-none"
-                placeholder="Product description..."
+                data-ocid="products.textarea"
               />
             </div>
-            <div>
-              <label htmlFor="prod-price" className="admin-label">
-                Price \(in paise\) \*
-              </label>
-              <input
-                required
-                type="number"
-                id="prod-price"
-                value={form.price.toString()}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    price: BigInt(e.target.value || "0"),
-                  }))
-                }
-                className="admin-input w-full"
-                placeholder="999900 = ₹9,999"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label htmlFor="pprice">Price (₹)</Label>
+                <Input
+                  id="pprice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.price}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, price: e.target.value }))
+                  }
+                  placeholder="e.g. 25000"
+                  required
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="pstock">Stock Qty</Label>
+                <Input
+                  id="pstock"
+                  type="number"
+                  min="0"
+                  value={form.stock}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, stock: e.target.value }))
+                  }
+                  placeholder="e.g. 10"
+                  required
+                />
+              </div>
             </div>
-            <div>
-              <label htmlFor="prod-stock" className="admin-label">
-                Stock \*
-              </label>
-              <input
-                required
-                type="number"
-                id="prod-stock"
-                value={form.stock.toString()}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    stock: BigInt(e.target.value || "0"),
-                  }))
-                }
-                className="admin-input w-full"
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label htmlFor="prod-imageUrl" className="admin-label">
-                Image URL
-              </label>
-              <input
-                id="prod-image"
+            <div className="space-y-1">
+              <Label htmlFor="pimg">Image URL</Label>
+              <Input
+                id="pimg"
                 value={form.imageUrl}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, imageUrl: e.target.value }))
                 }
-                className="admin-input w-full"
-                placeholder="/assets/generated/product-ring.dim_600x600.jpg"
+                placeholder="https://... or /assets/generated/..."
               />
-            </div>
-            <div className="sm:col-span-2 flex gap-6">
-              {(["isFeatured", "isNewArrival", "isBestSeller"] as const).map(
-                (key) => (
-                  <label
-                    key={key}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={form[key]}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, [key]: e.target.checked }))
-                      }
-                      className="w-4 h-4 accent-gold"
-                    />
-                    <span className="text-sm font-sans text-foreground/80 capitalize">
-                      {key
-                        .replace("is", "")
-                        .replace(/([A-Z])/g, " $1")
-                        .trim()}
-                    </span>
-                  </label>
-                ),
+              {form.imageUrl && (
+                <div className="mt-2 w-24 h-24 rounded overflow-hidden border border-border">
+                  <img
+                    src={form.imageUrl}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               )}
             </div>
-            <div className="sm:col-span-2 flex gap-3">
-              <button
-                type="submit"
-                disabled={upsertMutation.isPending}
-                className="btn-gold flex items-center gap-2"
-              >
-                {upsertMutation.isPending && (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                )}
-                {editProduct ? "Update" : "Create"}
-              </button>
-              <button
+            <div className="flex gap-6">
+              <div className="flex items-center gap-2 cursor-pointer">
+                <Checkbox
+                  checked={form.isFeatured}
+                  onCheckedChange={(v) =>
+                    setForm((f) => ({ ...f, isFeatured: !!v }))
+                  }
+                  data-ocid="products.checkbox"
+                />
+                <span className="text-sm">Featured</span>
+              </div>
+              <div className="flex items-center gap-2 cursor-pointer">
+                <Checkbox
+                  checked={form.isNewArrival}
+                  onCheckedChange={(v) =>
+                    setForm((f) => ({ ...f, isNewArrival: !!v }))
+                  }
+                />
+                <span className="text-sm">New Arrival</span>
+              </div>
+              <div className="flex items-center gap-2 cursor-pointer">
+                <Checkbox
+                  checked={form.isBestSeller}
+                  onCheckedChange={(v) =>
+                    setForm((f) => ({ ...f, isBestSeller: !!v }))
+                  }
+                />
+                <span className="text-sm">Best Seller</span>
+              </div>
+            </div>
+            <DialogFooter className="pt-2">
+              <Button
                 type="button"
-                onClick={() => setShowForm(false)}
-                className="btn-gold-outline"
+                variant="outline"
+                onClick={() => setDialogOpen(false)}
+                data-ocid="products.cancel_button"
               >
                 Cancel
-              </button>
-            </div>
+              </Button>
+              <Button
+                type="submit"
+                disabled={upsertMutation.isPending}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                data-ocid="products.submit_button"
+              >
+                {upsertMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : null}
+                {upsertMutation.isPending
+                  ? "Saving..."
+                  : editTarget
+                    ? "Update Product"
+                    : "Add Product"}
+              </Button>
+            </DialogFooter>
           </form>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
-      {/* Table */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 text-gold animate-spin" />
-        </div>
-      ) : (
-        <div className="luxury-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm font-sans">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Name
-                  </th>
-                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Price
-                  </th>
-                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Stock
-                  </th>
-                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Tags
-                  </th>
-                  <th className="text-right px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {products.map((p) => (
-                  <tr
-                    key={p.id.toString()}
-                    className="hover:bg-muted/20 transition-colors"
-                  >
-                    <td className="px-4 py-3 font-medium">{p.name}</td>
-                    <td className="px-4 py-3 text-gold">
-                      {formatBigIntPrice(p.price)}
-                    </td>
-                    <td className="px-4 py-3">{p.stock.toString()}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1 flex-wrap">
-                        {p.isFeatured && (
-                          <span className="text-[9px] bg-gold/20 text-gold px-1.5 py-0.5">
-                            Featured
-                          </span>
-                        )}
-                        {p.isNewArrival && (
-                          <span className="text-[9px] bg-burgundy/20 text-burgundy px-1.5 py-0.5">
-                            New
-                          </span>
-                        )}
-                        {p.isBestSeller && (
-                          <span className="text-[9px] bg-green-100 text-green-700 px-1.5 py-0.5">
-                            Bestseller
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => openEdit(p)}
-                          className="p-1.5 text-muted-foreground hover:text-gold transition-colors"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (confirm("Delete this product?"))
-                              deleteMutation.mutate(p.id);
-                          }}
-                          className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {products.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="text-center py-12 text-muted-foreground"
-                    >
-                      No products yet. Add your first product.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      {/* Delete Confirm */}
+      <Dialog
+        open={deleteConfirm !== null}
+        onOpenChange={() => setDeleteConfirm(null)}
+      >
+        <DialogContent
+          className="max-w-sm bg-card border-border"
+          data-ocid="products.modal"
+        >
+          <DialogHeader>
+            <DialogTitle className="font-serif">Delete Product?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            This action cannot be undone. The product will be permanently
+            removed from the catalogue.
+          </p>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteConfirm(null)}
+              data-ocid="products.cancel_button"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() =>
+                deleteConfirm !== null && deleteMutation.mutate(deleteConfirm)
+              }
+              disabled={deleteMutation.isPending}
+              data-ocid="products.confirm_button"
+            >
+              {deleteMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : null}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-// ─── Orders Tab ──────────────────────────────────────────────────────────────
+// ─── Orders ──────────────────────────────────────────────────────────────────
 function OrdersTab() {
-  const { actor } = useActor();
+  const { actor, isFetching } = useActor();
   const qc = useQueryClient();
 
   const { data: orders = [], isLoading } = useQuery<Order[]>({
     queryKey: ["admin-orders"],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getUserOrders();
-    },
-    enabled: !!actor,
+    queryFn: async () => (actor ? actor.getUserOrders() : []),
+    enabled: !!actor && !isFetching,
   });
 
-  const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: bigint; status: OrderStatus }) => {
+  const statusMutation = useMutation({
+    mutationFn: async ({
+      id,
+      status,
+    }: {
+      id: bigint;
+      status: OrderStatus;
+    }) => {
       if (!actor) throw new Error("Not authenticated");
       return actor.updateOrderStatus(id, status);
     },
@@ -385,134 +701,112 @@ function OrdersTab() {
     onError: () => toast.error("Failed to update status"),
   });
 
-  const STATUS_COLORS: Record<OrderStatus, string> = {
-    [OrderStatus.pending]: "bg-yellow-100 text-yellow-700",
-    [OrderStatus.processing]: "bg-blue-100 text-blue-700",
-    [OrderStatus.shipped]: "bg-purple-100 text-purple-700",
-    [OrderStatus.delivered]: "bg-green-100 text-green-700",
-    [OrderStatus.cancelled]: "bg-red-100 text-red-700",
-  };
-
   return (
-    <div>
-      <h2 className="font-serif text-xl mb-6">Orders</h2>
+    <div data-ocid="orders.section">
+      <h2 className="text-2xl font-serif text-foreground mb-6">Orders</h2>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 text-gold animate-spin" />
+        <div data-ocid="orders.loading_state" className="space-y-3">
+          {["a", "b", "c", "d"].map((k) => (
+            <Skeleton key={k} className="h-14 w-full" />
+          ))}
+        </div>
+      ) : orders.length === 0 ? (
+        <div
+          data-ocid="orders.empty_state"
+          className="text-center py-16 border border-dashed border-border rounded-lg"
+        >
+          <ShoppingBag className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">No orders yet.</p>
         </div>
       ) : (
-        <div className="luxury-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm font-sans">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Order ID
-                  </th>
-                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Amount
-                  </th>
-                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Payment
-                  </th>
-                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Status
-                  </th>
-                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Date
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {orders.map((o) => (
-                  <tr
-                    key={o.id.toString()}
-                    className="hover:bg-muted/20 transition-colors"
-                  >
-                    <td className="px-4 py-3 font-mono text-xs">
-                      {o.id.toString()}
-                    </td>
-                    <td className="px-4 py-3 font-medium">
-                      {formatBigIntPrice(o.totalAmount)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`text-[10px] px-2 py-0.5 font-semibold uppercase ${
-                          o.paymentStatus === PaymentStatus.paid
-                            ? "bg-green-100 text-green-700"
-                            : o.paymentStatus === PaymentStatus.failed
-                              ? "bg-red-100 text-red-700"
-                              : "bg-yellow-100 text-yellow-700"
-                        }`}
-                      >
-                        {o.paymentStatus}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <select
-                        value={o.status}
-                        onChange={(e) =>
-                          updateStatusMutation.mutate({
-                            id: o.id,
-                            status: e.target.value as OrderStatus,
-                          })
-                        }
-                        className={`text-[10px] px-2 py-0.5 font-semibold uppercase cursor-pointer border-0 outline-none ${STATUS_COLORS[o.status]}`}
-                      >
-                        {Object.values(OrderStatus).map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs">
-                      {new Date(
-                        Number(o.createdAt) / 1_000_000,
-                      ).toLocaleDateString("en-IN")}
-                    </td>
-                  </tr>
-                ))}
-                {orders.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="text-center py-12 text-muted-foreground"
+        <div className="rounded-lg border border-border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-border bg-muted/30">
+                <TableHead>Order ID</TableHead>
+                <TableHead>Items</TableHead>
+                <TableHead>Total</TableHead>
+                <TableHead>Payment</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {orders.map((order, idx) => (
+                <TableRow
+                  key={order.id.toString()}
+                  data-ocid={`orders.item.${idx + 1}`}
+                  className="border-border"
+                >
+                  <TableCell className="font-mono text-xs text-muted-foreground">
+                    #{order.id.toString()}
+                  </TableCell>
+                  <TableCell>{order.items.length} item(s)</TableCell>
+                  <TableCell className="font-semibold text-primary">
+                    {formatBigIntPrice(order.totalAmount)}
+                  </TableCell>
+                  <TableCell>
+                    <span className="capitalize text-sm">
+                      {order.paymentStatus}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-xs border capitalize ${orderStatusColor(
+                        order.status,
+                      )}`}
                     >
-                      No orders yet.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                      {order.status}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          data-ocid={`orders.dropdown_menu.${idx + 1}`}
+                        >
+                          Update <ChevronDown className="ml-1 h-3 w-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="bg-card border-border">
+                        {Object.values(OrderStatus).map((s) => (
+                          <DropdownMenuItem
+                            key={s}
+                            onClick={() =>
+                              statusMutation.mutate({ id: order.id, status: s })
+                            }
+                            className="capitalize cursor-pointer"
+                          >
+                            {s}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>
   );
 }
 
-// ─── Coupons Tab ─────────────────────────────────────────────────────────────
+// ─── Coupons ─────────────────────────────────────────────────────────────────
 function CouponsTab() {
-  const { actor } = useActor();
+  const { actor, isFetching } = useActor();
   const qc = useQueryClient();
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({
-    code: "",
-    discountType: DiscountType.percentage,
-    discountValue: "",
-    minOrderValue: "",
-    isActive: true,
-  });
+  const [addOpen, setAddOpen] = useState(false);
+  const [form, setForm] = useState(EMPTY_COUPON);
 
   const { data: coupons = [], isLoading } = useQuery<Coupon[]>({
     queryKey: ["admin-coupons"],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllCoupons();
-    },
-    enabled: !!actor,
+    queryFn: async () => (actor ? actor.getAllCoupons() : []),
+    enabled: !!actor && !isFetching,
   });
 
   const upsertMutation = useMutation({
@@ -522,14 +816,8 @@ function CouponsTab() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-coupons"] });
-      setShowForm(false);
-      setForm({
-        code: "",
-        discountType: DiscountType.percentage,
-        discountValue: "",
-        minOrderValue: "",
-        isActive: true,
-      });
+      setAddOpen(false);
+      setForm(EMPTY_COUPON);
       toast.success("Coupon saved");
     },
     onError: () => toast.error("Failed to save coupon"),
@@ -543,10 +831,14 @@ function CouponsTab() {
       if (!actor) throw new Error("Not authenticated");
       return actor.updateCouponStatus(code, isActive);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-coupons"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-coupons"] });
+      toast.success("Coupon status updated");
+    },
+    onError: () => toast.error("Failed to update coupon"),
   });
 
-  const removeMutation = useMutation({
+  const deleteMutation = useMutation({
     mutationFn: async (code: string) => {
       if (!actor) throw new Error("Not authenticated");
       return actor.removeCoupon(code);
@@ -555,6 +847,7 @@ function CouponsTab() {
       qc.invalidateQueries({ queryKey: ["admin-coupons"] });
       toast.success("Coupon removed");
     },
+    onError: () => toast.error("Failed to remove coupon"),
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -562,345 +855,374 @@ function CouponsTab() {
     const coupon: Coupon = {
       code: form.code.toUpperCase(),
       discountType: form.discountType,
-      discountValue: BigInt(form.discountValue || "0"),
+      discountValue: BigInt(Number.parseInt(form.discountValue) || 0),
       minOrderValue: form.minOrderValue
-        ? BigInt(form.minOrderValue)
+        ? BigInt(Math.round(Number.parseFloat(form.minOrderValue) * 100))
         : undefined,
-      isActive: form.isActive,
       expiresAt: undefined,
+      isActive: form.isActive,
     };
     upsertMutation.mutate(coupon);
   };
 
   return (
-    <div>
+    <div data-ocid="coupons.section">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="font-serif text-xl">Coupons</h2>
-        <button
-          type="button"
-          onClick={() => setShowForm(true)}
-          className="btn-gold flex items-center gap-2"
+        <h2 className="text-2xl font-serif text-foreground">Coupons</h2>
+        <Button
+          onClick={() => setAddOpen(true)}
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
+          data-ocid="coupons.open_modal_button"
         >
-          <Plus className="w-3.5 h-3.5" />
+          <Plus className="h-4 w-4 mr-2" />
           Add Coupon
-        </button>
+        </Button>
       </div>
 
-      {showForm && (
-        <div className="luxury-card p-6 mb-6">
-          <h3 className="font-serif text-lg mb-4">New Coupon</h3>
-          <form
-            onSubmit={handleSubmit}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-          >
-            <div>
-              <label htmlFor="coupon-code" className="admin-label">
-                Coupon Code \*
-              </label>
-              <input
-                required
-                id="coupon-code-input"
+      {isLoading ? (
+        <div data-ocid="coupons.loading_state" className="space-y-3">
+          {["a", "b", "c"].map((k) => (
+            <Skeleton key={k} className="h-14 w-full" />
+          ))}
+        </div>
+      ) : coupons.length === 0 ? (
+        <div
+          data-ocid="coupons.empty_state"
+          className="text-center py-16 border border-dashed border-border rounded-lg"
+        >
+          <Tag className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">
+            No coupons yet. Create your first discount code.
+          </p>
+        </div>
+      ) : (
+        <div className="rounded-lg border border-border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-border bg-muted/30">
+                <TableHead>Code</TableHead>
+                <TableHead>Discount</TableHead>
+                <TableHead>Min Order</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {coupons.map((c, idx) => (
+                <TableRow
+                  key={c.code}
+                  data-ocid={`coupons.item.${idx + 1}`}
+                  className="border-border"
+                >
+                  <TableCell className="font-mono font-bold text-primary">
+                    {c.code}
+                  </TableCell>
+                  <TableCell>
+                    {c.discountType === DiscountType.percentage
+                      ? `${c.discountValue}% off`
+                      : `₹${c.discountValue} off`}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {c.minOrderValue ? formatBigIntPrice(c.minOrderValue) : "—"}
+                  </TableCell>
+                  <TableCell>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        toggleMutation.mutate({
+                          code: c.code,
+                          isActive: !c.isActive,
+                        })
+                      }
+                      data-ocid={`coupons.toggle.${idx + 1}`}
+                      className={`px-2 py-0.5 rounded-full text-xs border transition-colors cursor-pointer ${
+                        c.isActive
+                          ? "bg-emerald-900/40 text-emerald-300 border-emerald-700"
+                          : "bg-zinc-800 text-zinc-400 border-zinc-600"
+                      }`}
+                    >
+                      {c.isActive ? "Active" : "Inactive"}
+                    </button>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => deleteMutation.mutate(c.code)}
+                      data-ocid={`coupons.delete_button.${idx + 1}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      {/* Add Coupon Dialog */}
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent
+          className="max-w-md bg-card border-border"
+          data-ocid="coupons.dialog"
+        >
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl">
+              Create Coupon
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+            <div className="space-y-1">
+              <Label>Coupon Code</Label>
+              <Input
                 value={form.code}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, code: e.target.value.toUpperCase() }))
                 }
-                className="admin-input w-full uppercase"
-                placeholder="SAVE20"
-              />
-            </div>
-            <div>
-              <label htmlFor="coupon-type" className="admin-label">
-                Discount Type
-              </label>
-              <select
-                id="coupon-type-input"
-                value={form.discountType}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    discountType: e.target.value as DiscountType,
-                  }))
-                }
-                className="admin-input w-full"
-              >
-                <option value={DiscountType.percentage}>Percentage (%)</option>
-                <option value={DiscountType.fixed}>Fixed Amount (₹)</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="coupon-value" className="admin-label">
-                Discount Value \*
-              </label>
-              <input
+                placeholder="e.g. VED20"
                 required
-                type="number"
-                id="coupon-value-input"
-                value={form.discountValue}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, discountValue: e.target.value }))
-                }
-                className="admin-input w-full"
-                placeholder={
-                  form.discountType === DiscountType.percentage
-                    ? "20 = 20%"
-                    : "5000 = ₹50"
-                }
+                className="font-mono uppercase"
+                data-ocid="coupons.input"
               />
             </div>
-            <div>
-              <label htmlFor="coupon-min" className="admin-label">
-                Min Order Value \(paise\)
-              </label>
-              <input
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label>Discount Type</Label>
+                <select
+                  value={form.discountType}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      discountType: e.target.value as DiscountType,
+                    }))
+                  }
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                  data-ocid="coupons.select"
+                >
+                  <option value={DiscountType.percentage}>
+                    Percentage (%)
+                  </option>
+                  <option value={DiscountType.fixed}>Fixed (₹)</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <Label>Discount Value</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={form.discountValue}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, discountValue: e.target.value }))
+                  }
+                  placeholder={
+                    form.discountType === DiscountType.percentage
+                      ? "e.g. 20"
+                      : "e.g. 500"
+                  }
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Minimum Order Value (₹) — optional</Label>
+              <Input
                 type="number"
-                id="coupon-min-input"
+                min="0"
                 value={form.minOrderValue}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, minOrderValue: e.target.value }))
                 }
-                className="admin-input w-full"
-                placeholder="Optional"
+                placeholder="e.g. 5000"
               />
             </div>
-            <div className="sm:col-span-2 flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="isActive"
+            <div className="flex items-center gap-2 cursor-pointer">
+              <Checkbox
                 checked={form.isActive}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, isActive: e.target.checked }))
+                onCheckedChange={(v) =>
+                  setForm((f) => ({ ...f, isActive: !!v }))
                 }
-                className="w-4 h-4 accent-gold"
               />
-              <label
-                htmlFor="isActive"
-                className="text-sm font-sans cursor-pointer"
-              >
-                Active
-              </label>
+              <span className="text-sm">Active immediately</span>
             </div>
-            <div className="sm:col-span-2 flex gap-3">
-              <button
-                type="submit"
-                disabled={upsertMutation.isPending}
-                className="btn-gold flex items-center gap-2"
-              >
-                {upsertMutation.isPending && (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                )}
-                Save
-              </button>
-              <button
+            <DialogFooter>
+              <Button
                 type="button"
-                onClick={() => setShowForm(false)}
-                className="btn-gold-outline"
+                variant="outline"
+                onClick={() => setAddOpen(false)}
+                data-ocid="coupons.cancel_button"
               >
                 Cancel
-              </button>
-            </div>
+              </Button>
+              <Button
+                type="submit"
+                disabled={upsertMutation.isPending}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                data-ocid="coupons.submit_button"
+              >
+                {upsertMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : null}
+                Save Coupon
+              </Button>
+            </DialogFooter>
           </form>
-        </div>
-      )}
-
-      {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 text-gold animate-spin" />
-        </div>
-      ) : (
-        <div className="luxury-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm font-sans">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Code
-                  </th>
-                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Type
-                  </th>
-                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Value
-                  </th>
-                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Status
-                  </th>
-                  <th className="text-right px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {coupons.map((c) => (
-                  <tr
-                    key={c.code}
-                    className="hover:bg-muted/20 transition-colors"
-                  >
-                    <td className="px-4 py-3 font-mono font-semibold">
-                      {c.code}
-                    </td>
-                    <td className="px-4 py-3 capitalize">{c.discountType}</td>
-                    <td className="px-4 py-3 text-gold font-medium">
-                      {c.discountType === DiscountType.percentage
-                        ? `${c.discountValue}%`
-                        : formatBigIntPrice(c.discountValue)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          toggleMutation.mutate({
-                            code: c.code,
-                            isActive: !c.isActive,
-                          })
-                        }
-                        className={`flex items-center gap-1 text-[10px] font-semibold uppercase px-2 py-0.5 ${
-                          c.isActive
-                            ? "bg-green-100 text-green-700"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {c.isActive ? (
-                          <CheckCircle className="w-3 h-3" />
-                        ) : (
-                          <XCircle className="w-3 h-3" />
-                        )}
-                        {c.isActive ? "Active" : "Inactive"}
-                      </button>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (confirm(`Delete coupon "${c.code}"?`))
-                            removeMutation.mutate(c.code);
-                        }}
-                        className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {coupons.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="text-center py-12 text-muted-foreground"
-                    >
-                      No coupons yet.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-// ─── Admin Page ──────────────────────────────────────────────────────────────
+// ─── Main AdminPage ───────────────────────────────────────────────────────────
 export function AdminPage() {
+  const { login, loginStatus, identity } = useInternetIdentity();
   const { actor, isFetching } = useActor();
-  const { identity, login } = useInternetIdentity();
-  const [tab, setTab] = useState<AdminTab>("products");
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
 
-  useEffect(() => {
-    if (!actor || isFetching) return;
-    actor
-      .isCallerAdmin()
-      .then((result) => setIsAdmin(result))
-      .catch(() => setIsAdmin(false));
-  }, [actor, isFetching]);
+  const { data: isAdmin, isLoading: checkingAdmin } = useQuery<boolean>({
+    queryKey: ["is-admin"],
+    queryFn: async () => {
+      if (!actor) return false;
+      return actor.isCallerAdmin();
+    },
+    enabled: !!actor && !isFetching && !!identity,
+  });
 
-  if (!identity) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center pt-24 px-4">
-        <div className="text-center luxury-card p-10 max-w-sm">
-          <h2 className="font-serif text-2xl mb-3">Admin Access</h2>
-          <p className="text-muted-foreground text-sm font-sans mb-6">
-            Please login to access the admin dashboard.
-          </p>
-          <button type="button" onClick={login} className="btn-gold w-full">
-            Login
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (isFetching || isAdmin === null) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center pt-24">
-        <Loader2 className="w-10 h-10 text-gold animate-spin" />
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center pt-24 px-4">
-        <div className="text-center luxury-card p-10 max-w-sm">
-          <XCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
-          <h2 className="font-serif text-2xl mb-3">Access Denied</h2>
-          <p className="text-muted-foreground text-sm font-sans mb-6">
-            You don't have admin privileges.
-          </p>
-          <a href="#/" className="btn-gold-outline inline-block">
-            Back to Home
-          </a>
-        </div>
-      </div>
-    );
-  }
-
-  const tabs = [
-    { id: "products" as AdminTab, label: "Products", icon: Package },
-    { id: "orders" as AdminTab, label: "Orders", icon: ShoppingCart },
-    { id: "coupons" as AdminTab, label: "Coupons", icon: Tag },
+  const tabs: { id: AdminTab; label: string; icon: React.ElementType }[] = [
+    { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+    { id: "products", label: "Products", icon: Package },
+    { id: "orders", label: "Orders", icon: ShoppingBag },
+    { id: "coupons", label: "Coupons", icon: Tag },
   ];
 
-  return (
-    <div className="min-h-screen bg-background pt-20">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-8 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <p className="whisper-text mb-1">Management</p>
-            <h1 className="luxury-heading text-3xl">Admin Dashboard</h1>
+  // Not logged in
+  if (!identity) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center max-w-sm"
+        >
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+            <Crown className="h-8 w-8 text-primary" />
           </div>
-          <a
-            href="#/"
-            className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground hover:text-gold transition-colors"
+          <h1 className="text-3xl font-serif text-foreground mb-2">
+            Admin Access
+          </h1>
+          <p className="text-muted-foreground mb-8">
+            Admin access required. Please log in with your admin account to
+            manage products, orders, and coupons.
+          </p>
+          <Button
+            onClick={login}
+            disabled={loginStatus === "logging-in"}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 px-8"
+            data-ocid="admin.primary_button"
           >
-            ← Back to Store
-          </a>
-        </div>
+            {loginStatus === "logging-in" ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : null}
+            Log In
+          </Button>
+        </motion.div>
+      </div>
+    );
+  }
 
-        {/* Tabs */}
-        <div className="flex border-b border-border mb-8">
-          {tabs.map(({ id, label, icon: Icon }) => (
-            <button
-              type="button"
-              key={id}
-              onClick={() => setTab(id)}
-              className={`flex items-center gap-2 px-5 py-3 text-[12px] font-sans uppercase tracking-wider border-b-2 transition-colors ${
-                tab === id
-                  ? "border-gold text-gold"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
+  // Checking admin status
+  if (checkingAdmin || isFetching) {
+    return (
+      <div
+        data-ocid="admin.loading_state"
+        className="min-h-[80vh] flex items-center justify-center"
+      >
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Not admin
+  if (isAdmin === false) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center px-4">
+        <div data-ocid="admin.error_state" className="text-center max-w-sm">
+          <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle className="h-8 w-8 text-destructive" />
+          </div>
+          <h1 className="text-2xl font-serif text-foreground mb-2">
+            Access Denied
+          </h1>
+          <p className="text-muted-foreground">
+            Your account does not have admin privileges. Contact the site owner
+            to request access.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Admin Header */}
+      <div className="border-b border-border bg-card">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-3">
+              <Crown className="h-5 w-5 text-primary" />
+              <span className="font-serif text-lg text-foreground">
+                Ved Jewellers
+              </span>
+              <Separator orientation="vertical" className="h-5" />
+              <span className="text-sm text-muted-foreground">Admin Panel</span>
+            </div>
+            <div className="text-xs text-muted-foreground font-mono">
+              {identity?.getPrincipal().toString().slice(0, 12)}...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar */}
+          <aside className="lg:w-56 shrink-0">
+            <nav className="space-y-1">
+              {tabs.map((tab) => (
+                <button
+                  type="button"
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  data-ocid={`admin.${tab.id}.tab`}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    activeTab === tab.id
+                      ? "bg-primary/15 text-primary border border-primary/30"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  }`}
+                >
+                  <tab.icon className="h-4 w-4" />
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+          </aside>
+
+          {/* Content */}
+          <main className="flex-1 min-w-0">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.2 }}
             >
-              <Icon className="w-4 h-4" />
-              {label}
-            </button>
-          ))}
+              {activeTab === "dashboard" && <DashboardTab />}
+              {activeTab === "products" && <ProductsTab />}
+              {activeTab === "orders" && <OrdersTab />}
+              {activeTab === "coupons" && <CouponsTab />}
+            </motion.div>
+          </main>
         </div>
-
-        {/* Tab content */}
-        {tab === "products" && <ProductsTab />}
-        {tab === "orders" && <OrdersTab />}
-        {tab === "coupons" && <CouponsTab />}
       </div>
     </div>
   );
